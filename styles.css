@@ -13,6 +13,8 @@
   --border: #d0d5dd;
   --accent: #2563eb;
   --accent-text: #ffffff;
+  --success: #15803d;
+  --error: #b91c1c;
 
   --touch: 52px;        /* minimum height for anything you tap */
   --radius: 12px;
@@ -29,6 +31,8 @@
     --border: #3a414c;
     --accent: #5b8def;
     --accent-text: #0b1220;
+    --success: #4ade80;
+    --error: #f87171;
   }
 }
 
@@ -163,6 +167,19 @@ main {
   border: none;
   color: var(--accent-text);
   font-size: 20px;
+}
+
+/* ---------- Save message ---------- */
+.message {
+  min-height: 1.4em;   /* reserves the space so the page doesn't jump */
+  margin: 12px 0 0;
+  text-align: center;
+  font-weight: 600;
+  color: var(--success);
+}
+
+.message.error {
+  color: var(--error);
 }
 
 /* ---------- History screen ---------- */

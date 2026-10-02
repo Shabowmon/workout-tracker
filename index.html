@@ -32,13 +32,8 @@
           placeholder="e.g. Bench Press"
           autocomplete="off"
         >
-        <!-- Placeholder options. Step 2 fills this from saved workouts. -->
-        <datalist id="exercise-options">
-          <option value="Bench Press">
-          <option value="Squat">
-          <option value="Deadlift">
-          <option value="Overhead Press">
-        </datalist>
+        <!-- Empty here: app.js fills this with exercises from saved workouts. -->
+        <datalist id="exercise-options"></datalist>
 
         <!-- Sets: one row per set, each with a reps and a weight input -->
         <div class="sets">
@@ -49,32 +44,17 @@
             <span>Weight (lb)</span>
           </div>
 
-          <!-- Placeholder rows. Step 2 makes "+ Add set" create these. -->
-          <div id="set-list">
-            <div class="set-row">
-              <span class="set-number">1</span>
-              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 1 reps">
-              <span class="times">×</span>
-              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 1 weight">
-            </div>
-            <div class="set-row">
-              <span class="set-number">2</span>
-              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 2 reps">
-              <span class="times">×</span>
-              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 2 weight">
-            </div>
-            <div class="set-row">
-              <span class="set-number">3</span>
-              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 3 reps">
-              <span class="times">×</span>
-              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 3 weight">
-            </div>
-          </div>
+          <!-- Empty here: app.js adds the set rows (see addSetRow). -->
+          <div id="set-list"></div>
         </div>
 
-        <!-- type="button" so these don't submit the form. No logic yet. -->
+        <!-- type="button" so these don't submit the form; app.js handles the taps. -->
         <button id="add-set" class="button button-secondary" type="button">+ Add set</button>
         <button id="save-workout" class="button button-primary" type="button">Save workout</button>
+
+        <!-- app.js writes "Saved ..." or an error here. role="status" makes
+             screen readers announce it. -->
+        <p id="save-message" class="message" role="status"></p>
 
       </form>
     </section>
