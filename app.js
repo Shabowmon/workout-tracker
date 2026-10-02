@@ -75,9 +75,29 @@ function addSetRow() {
     '<span class="set-number">' + number + "</span>" +
     '<input class="number-input reps-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set ' + number + ' reps">' +
     '<span class="times">×</span>' +
-    '<input class="number-input weight-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set ' + number + ' weight">';
+    '<input class="number-input weight-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set ' + number + ' weight">' +
+    '<button class="remove-set" type="button" aria-label="Remove set ' + number + '">×</button>';
+
+  // Tapping the × removes this row, then renumbers the rows that are left.
+  row.querySelector(".remove-set").addEventListener("click", function () {
+    row.remove();
+    renumberSets();
+  });
 
   setList.appendChild(row);
+}
+
+// After a row is removed, make the set numbers count 1, 2, 3... again.
+function renumberSets() {
+  const rows = setList.querySelectorAll(".set-row");
+  rows.forEach(function (row, index) {
+    const number = index + 1;
+    row.querySelector(".set-number").textContent = number;
+    // Keep the screen-reader labels in step with the visible number.
+    row.querySelector(".reps-input").setAttribute("aria-label", "Set " + number + " reps");
+    row.querySelector(".weight-input").setAttribute("aria-label", "Set " + number + " weight");
+    row.querySelector(".remove-set").setAttribute("aria-label", "Remove set " + number);
+  });
 }
 
 // Clear the form back to its starting state: no name, a few empty rows.
