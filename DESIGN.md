@@ -25,9 +25,11 @@ don't build it yet.
   option: its own subdomain (lifts.robertnaanos.com).
 
 ## Screens
-1. **Log** (main screen): exercise picker — remembers exercises you've used
-   before, or type a new one. Rows of reps/weight inputs, "+ add set",
-   Save button.
+1. **Log** (main screen): exercise picker — a dropdown grouped by muscle
+   group (edit the EXERCISES list in app.js to match your program), plus a
+   "Custom..." option for typing a new name. Custom names are remembered
+   under a "My Exercises" group. Rows of reps/weight inputs with a × to
+   remove a row, "+ add set", Save button.
 2. **History:** workouts grouped by date. Tap to expand a workout and see
    all its sets.
 

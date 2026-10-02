@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <!-- Makes the page fit a phone screen instead of rendering zoomed out -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Tints the browser's own toolbar to match the page background -->
+  <meta name="theme-color" content="#0b0c0e">
   <title>Workout Tracker</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -21,36 +23,49 @@
 
       <form id="log-form">
 
-        <!-- Exercise picker: a text input linked to a <datalist> gives us
-             "pick from the list OR type a new one" for free. -->
-        <label class="field-label" for="exercise-name">Exercise</label>
-        <input
-          id="exercise-name"
-          class="text-input"
-          type="text"
-          list="exercise-options"
-          placeholder="e.g. Bench Press"
-          autocomplete="off"
-        >
-        <!-- Empty here: app.js fills this with exercises from saved workouts. -->
-        <datalist id="exercise-options"></datalist>
+        <div class="card">
 
-        <!-- Sets: one row per set, each with a reps and a weight input -->
-        <div class="sets">
-          <div class="set-row set-header">
-            <span>Set</span>
-            <span>Reps</span>
-            <span></span>
-            <span>Weight (lb)</span>
-            <span></span>   <!-- empty: sits above the × remove buttons -->
+          <!-- Exercise picker: a dropdown grouped by muscle group.
+               app.js fills in the options (see renderExerciseSelect). -->
+          <label class="field-label" for="exercise-select">Exercise</label>
+          <select id="exercise-select" class="text-input select-input"></select>
+
+          <!-- Swapped in for the dropdown when "Custom..." is chosen. -->
+          <div id="custom-exercise" class="custom-row" hidden>
+            <input
+              id="exercise-name"
+              class="text-input"
+              type="text"
+              placeholder="New exercise name"
+              autocomplete="off"
+              aria-label="New exercise name"
+            >
+            <button id="back-to-list" class="back-button" type="button" aria-label="Back to exercise list">List</button>
           </div>
 
-          <!-- Empty here: app.js adds the set rows (see addSetRow). -->
-          <div id="set-list"></div>
+          <!-- Shown by app.js only while the typed name matches one of
+               your saved "My Exercises" names. -->
+          <button id="remove-custom" class="remove-custom" type="button" hidden>Remove from My Exercises</button>
+
+          <!-- Sets: one row per set, each with a reps and a weight input -->
+          <div class="sets">
+            <div class="set-row set-header">
+              <span>Set</span>
+              <span>Reps</span>
+              <span></span>
+              <span>Weight (lb)</span>
+              <span></span>   <!-- empty: sits above the × remove buttons -->
+            </div>
+
+            <!-- Empty here: app.js adds the set rows (see addSetRow). -->
+            <div id="set-list"></div>
+          </div>
+
+          <!-- type="button" so it doesn't submit the form; app.js handles the tap. -->
+          <button id="add-set" class="button button-secondary" type="button">+ Add set</button>
+
         </div>
 
-        <!-- type="button" so these don't submit the form; app.js handles the taps. -->
-        <button id="add-set" class="button button-secondary" type="button">+ Add set</button>
         <button id="save-workout" class="button button-primary" type="button">Save workout</button>
 
         <!-- app.js writes "Saved ..." or an error here. role="status" makes
@@ -80,8 +95,18 @@
   <!-- Bottom tab bar: sits within thumb reach on a phone.
        data-screen holds the id of the screen each tab shows. -->
   <nav class="tab-bar">
-    <button class="tab active" type="button" data-screen="screen-log">Log</button>
-    <button class="tab" type="button" data-screen="screen-history">History</button>
+    <button class="tab active" type="button" data-screen="screen-log">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>
+      </svg>
+      Log
+    </button>
+    <button class="tab" type="button" data-screen="screen-history">
+      <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+      </svg>
+      History
+    </button>
   </nav>
 
   <script src="app.js"></script>
