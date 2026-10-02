@@ -1,0 +1,238 @@
+/* ==========================================================
+   Workout Tracker styles
+   Mobile-first: the base styles are for a phone. The only
+   "bigger screen" rule is the max-width on the content column.
+   ========================================================== */
+
+/* ---------- Variables: change colors and sizes in one place ---------- */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --text: #1a1d21;
+  --muted: #667085;
+  --border: #d0d5dd;
+  --accent: #2563eb;
+  --accent-text: #ffffff;
+
+  --touch: 52px;        /* minimum height for anything you tap */
+  --radius: 12px;
+  --tab-bar-height: 64px;
+}
+
+/* Use dark colors when the phone is in dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --surface: #1c2026;
+    --text: #f2f4f7;
+    --muted: #98a2b3;
+    --border: #3a414c;
+    --accent: #5b8def;
+    --accent-text: #0b1220;
+  }
+}
+
+/* ---------- Base ---------- */
+* {
+  box-sizing: border-box;   /* padding and border count toward an element's width */
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 18px;
+  line-height: 1.4;
+  /* Leave room so the fixed tab bar never covers the last bit of content */
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 16px);
+}
+
+/* Inputs and buttons don't inherit the page font by default */
+input,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+h1, h2, h3 {
+  margin: 0;
+}
+
+/* ---------- Header ---------- */
+.app-header {
+  padding: 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  font-size: 20px;
+}
+
+/* ---------- Screens ---------- */
+main {
+  max-width: 520px;   /* keeps the layout phone-shaped on a laptop */
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.screen h2 {
+  font-size: 24px;
+  margin-bottom: 16px;
+}
+
+/* ---------- Log screen ---------- */
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.text-input,
+.number-input {
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* 16px or larger stops iOS Safari from zooming in when an input is tapped */
+  font-size: 20px;
+}
+
+.number-input {
+  text-align: center;
+}
+
+.text-input:focus,
+.number-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.sets {
+  margin: 24px 0 12px;
+}
+
+/* One set = a 4-column grid: set number | reps | × | weight */
+.set-row {
+  display: grid;
+  grid-template-columns: 36px 1fr 20px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.set-header {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+}
+
+.set-number,
+.times {
+  text-align: center;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ---------- Buttons ---------- */
+.button {
+  display: block;
+  width: 100%;
+  min-height: var(--touch);
+  margin-top: 12px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button-secondary {
+  background: transparent;
+  border: 2px dashed var(--border);
+  color: var(--accent);
+}
+
+.button-primary {
+  min-height: 60px;   /* the main action gets the biggest target */
+  background: var(--accent);
+  border: none;
+  color: var(--accent-text);
+  font-size: 20px;
+}
+
+/* ---------- History screen ---------- */
+.workout {
+  margin-bottom: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* The tappable row that opens and closes a workout */
+.workout summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px;
+  padding: 0 16px;
+  cursor: pointer;
+}
+
+.workout-date {
+  font-weight: 600;
+}
+
+.workout-summary {
+  font-size: 15px;
+  color: var(--muted);
+}
+
+.workout-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.workout-body h3 {
+  margin-top: 12px;
+  font-size: 17px;
+}
+
+.set-list {
+  margin: 6px 0 0;
+  padding-left: 24px;
+  color: var(--muted);
+}
+
+/* ---------- Bottom tab bar ---------- */
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  /* Keeps the tabs above the home-indicator bar on newer iPhones */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab {
+  flex: 1;   /* the two tabs split the width evenly */
+  min-height: var(--tab-bar-height);
+  background: none;
+  border: none;
+  border-top: 3px solid transparent;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: var(--accent);
+  border-top-color: var(--accent);
+}

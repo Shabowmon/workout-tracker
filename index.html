@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Makes the page fit a phone screen instead of rendering zoomed out -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Workout Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <header class="app-header">
+    <h1>Workout Tracker</h1>
+  </header>
+
+  <main>
+
+    <!-- ============ SCREEN 1: LOG (shown first) ============ -->
+    <section id="screen-log" class="screen">
+      <h2>Log a workout</h2>
+
+      <form id="log-form">
+
+        <!-- Exercise picker: a text input linked to a <datalist> gives us
+             "pick from the list OR type a new one" for free. -->
+        <label class="field-label" for="exercise-name">Exercise</label>
+        <input
+          id="exercise-name"
+          class="text-input"
+          type="text"
+          list="exercise-options"
+          placeholder="e.g. Bench Press"
+          autocomplete="off"
+        >
+        <!-- Placeholder options. Step 2 fills this from saved workouts. -->
+        <datalist id="exercise-options">
+          <option value="Bench Press">
+          <option value="Squat">
+          <option value="Deadlift">
+          <option value="Overhead Press">
+        </datalist>
+
+        <!-- Sets: one row per set, each with a reps and a weight input -->
+        <div class="sets">
+          <div class="set-row set-header">
+            <span>Set</span>
+            <span>Reps</span>
+            <span></span>
+            <span>Weight (lb)</span>
+          </div>
+
+          <!-- Placeholder rows. Step 2 makes "+ Add set" create these. -->
+          <div id="set-list">
+            <div class="set-row">
+              <span class="set-number">1</span>
+              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 1 reps">
+              <span class="times">×</span>
+              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 1 weight">
+            </div>
+            <div class="set-row">
+              <span class="set-number">2</span>
+              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 2 reps">
+              <span class="times">×</span>
+              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 2 weight">
+            </div>
+            <div class="set-row">
+              <span class="set-number">3</span>
+              <input class="number-input" type="text" inputmode="numeric" placeholder="0" aria-label="Set 3 reps">
+              <span class="times">×</span>
+              <input class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Set 3 weight">
+            </div>
+          </div>
+        </div>
+
+        <!-- type="button" so these don't submit the form. No logic yet. -->
+        <button id="add-set" class="button button-secondary" type="button">+ Add set</button>
+        <button id="save-workout" class="button button-primary" type="button">Save workout</button>
+
+      </form>
+    </section>
+
+    <!-- ============ SCREEN 2: HISTORY (hidden until its tab is tapped) ============ -->
+    <section id="screen-history" class="screen" hidden>
+      <h2>History</h2>
+
+      <!-- Placeholder workouts, newest first. Step 3 builds this list from
+           saved data. <details> gives us tap-to-expand without any JS. -->
+      <div id="history-list">
+
+        <details class="workout">
+          <summary>
+            <span class="workout-date">Fri, Oct 2</span>
+            <span class="workout-summary">2 exercises</span>
+          </summary>
+          <div class="workout-body">
+            <h3>Bench Press</h3>
+            <ol class="set-list">
+              <li>8 × 135 lb</li>
+              <li>8 × 135 lb</li>
+              <li>6 × 145 lb</li>
+            </ol>
+            <h3>Overhead Press</h3>
+            <ol class="set-list">
+              <li>10 × 65 lb</li>
+              <li>8 × 75 lb</li>
+            </ol>
+          </div>
+        </details>
+
+        <details class="workout">
+          <summary>
+            <span class="workout-date">Wed, Sep 30</span>
+            <span class="workout-summary">1 exercise</span>
+          </summary>
+          <div class="workout-body">
+            <h3>Squat</h3>
+            <ol class="set-list">
+              <li>5 × 185 lb</li>
+              <li>5 × 185 lb</li>
+              <li>5 × 185 lb</li>
+            </ol>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom tab bar: sits within thumb reach on a phone.
+       data-screen holds the id of the screen each tab shows. -->
+  <nav class="tab-bar">
+    <button class="tab active" type="button" data-screen="screen-log">Log</button>
+    <button class="tab" type="button" data-screen="screen-history">History</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,5 +1,3 @@
-markdown
-
 # Workout Tracker — v1 Design
 
 ## What it is
