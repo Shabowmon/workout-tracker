@@ -63,46 +63,15 @@
     <section id="screen-history" class="screen" hidden>
       <h2>History</h2>
 
-      <!-- Placeholder workouts, newest first. Step 3 builds this list from
-           saved data. <details> gives us tap-to-expand without any JS. -->
-      <div id="history-list">
+      <!-- Shown by app.js only when nothing has been saved yet. -->
+      <p id="history-empty" class="empty-message" hidden>
+        No workouts yet. Log your first one and it will show up here.
+      </p>
 
-        <details class="workout">
-          <summary>
-            <span class="workout-date">Fri, Oct 2</span>
-            <span class="workout-summary">2 exercises</span>
-          </summary>
-          <div class="workout-body">
-            <h3>Bench Press</h3>
-            <ol class="set-list">
-              <li>8 × 135 lb</li>
-              <li>8 × 135 lb</li>
-              <li>6 × 145 lb</li>
-            </ol>
-            <h3>Overhead Press</h3>
-            <ol class="set-list">
-              <li>10 × 65 lb</li>
-              <li>8 × 75 lb</li>
-            </ol>
-          </div>
-        </details>
-
-        <details class="workout">
-          <summary>
-            <span class="workout-date">Wed, Sep 30</span>
-            <span class="workout-summary">1 exercise</span>
-          </summary>
-          <div class="workout-body">
-            <h3>Squat</h3>
-            <ol class="set-list">
-              <li>5 × 185 lb</li>
-              <li>5 × 185 lb</li>
-              <li>5 × 185 lb</li>
-            </ol>
-          </div>
-        </details>
-
-      </div>
+      <!-- Empty here: app.js builds one <details> per workout date, newest
+           first (see renderHistory). <details> gives us tap-to-expand
+           without any extra JS. -->
+      <div id="history-list"></div>
     </section>
 
   </main>

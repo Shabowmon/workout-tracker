@@ -183,6 +183,12 @@ main {
 }
 
 /* ---------- History screen ---------- */
+.empty-message {
+  margin: 48px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
 .workout {
   margin-bottom: 12px;
   background: var(--surface);

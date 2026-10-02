@@ -1,5 +1,5 @@
-// Workout Tracker — step 2: logging works and saves to localStorage.
-// The History screen still shows placeholder entries (that's step 3).
+// Workout Tracker — logging saves to localStorage, and the History
+// screen reads it back.
 
 // ==================== Screen switching ====================
 
@@ -190,12 +190,102 @@ function saveWorkout() {
   showMessage("Saved " + name + " — " + sets.length + (sets.length === 1 ? " set" : " sets"), false);
   resetForm();
   renderExerciseOptions();
+  renderHistory();
 }
 
 addSetButton.addEventListener("click", addSetRow);
 saveButton.addEventListener("click", saveWorkout);
 
+// ==================== History screen ====================
+
+const historyList = document.getElementById("history-list");
+const historyEmpty = document.getElementById("history-empty");
+
+// Turn a stored date like "2026-10-02" into something like "Fri, Oct 2".
+function formatDate(dateString) {
+  // Build the date from its parts so it's read in the phone's time zone.
+  // (new Date("2026-10-02") would be read as UTC and can show the day before.)
+  const parts = dateString.split("-");
+  const date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+
+  const options = { weekday: "short", month: "short", day: "numeric" };
+  // Only show the year for workouts from an earlier year.
+  if (date.getFullYear() !== new Date().getFullYear()) {
+    options.year = "numeric";
+  }
+  return date.toLocaleDateString(undefined, options);
+}
+
+// Turn one set into text like "8 × 135 lb". A weight of 0 (bodyweight)
+// is shown as just "8 reps".
+function formatSet(set) {
+  if (set.weight === 0) {
+    return set.reps + (set.reps === 1 ? " rep" : " reps");
+  }
+  return set.reps + " × " + set.weight + " lb";
+}
+
+// Small helper: create an element with a class and some text.
+// Using textContent (not innerHTML) means an exercise name is always
+// shown as plain text, even if it contains characters like < or &.
+function makeElement(tag, className, text) {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = text;
+  return element;
+}
+
+// Build the tap-to-expand card for one workout (one date).
+function makeWorkoutCard(workout) {
+  const card = document.createElement("details");
+  card.className = "workout";
+
+  // The always-visible row: date on the left, exercise count on the right.
+  const count = workout.exercises.length;
+  const summary = document.createElement("summary");
+  summary.appendChild(makeElement("span", "workout-date", formatDate(workout.date)));
+  summary.appendChild(makeElement("span", "workout-summary", count + (count === 1 ? " exercise" : " exercises")));
+  card.appendChild(summary);
+
+  // The part that shows when expanded: each exercise and its sets.
+  const body = document.createElement("div");
+  body.className = "workout-body";
+  workout.exercises.forEach(function (exercise) {
+    body.appendChild(makeElement("h3", "", exercise.name));
+
+    const list = document.createElement("ol");
+    list.className = "set-list";
+    exercise.sets.forEach(function (set) {
+      list.appendChild(makeElement("li", "", formatSet(set)));
+    });
+    body.appendChild(list);
+  });
+  card.appendChild(body);
+
+  return card;
+}
+
+// Rebuild the History screen from what's saved in localStorage.
+function renderHistory() {
+  const workouts = loadWorkouts();
+
+  // Newest first. Dates are "YYYY-MM-DD", so comparing them as text
+  // puts them in date order.
+  workouts.sort(function (a, b) {
+    return b.date.localeCompare(a.date);
+  });
+
+  historyList.innerHTML = "";
+  workouts.forEach(function (workout) {
+    historyList.appendChild(makeWorkoutCard(workout));
+  });
+
+  // Show the friendly message only when there is nothing to list.
+  historyEmpty.hidden = workouts.length > 0;
+}
+
 // ==================== Start-up ====================
 
 resetForm();
 renderExerciseOptions();
+renderHistory();
