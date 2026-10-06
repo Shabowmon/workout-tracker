@@ -12,7 +12,7 @@
   --accent: #60a5fa;
   --accent-text: #0b0c0e;   /* text on top of the accent */
 
-  --bg: #0b0c0e;          /* page background, header, tab bar */
+  --bg: #0b0c0e;          /* page background, tab bar */
   --surface: #131518;     /* cards */
   --field: #1a1d21;       /* inside of inputs and quiet buttons */
   --text: #ececee;
@@ -65,33 +65,33 @@ h1, h2, h3 {
   margin: 0;
 }
 
-/* ---------- Header ---------- */
-.app-header {
-  position: sticky;   /* stays at the top while the page scrolls */
-  top: 0;
-  z-index: 10;
-  /* env(...) keeps the title clear of the notch on newer phones */
-  padding: calc(16px + env(safe-area-inset-top)) 20px 16px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
+/* ---------- Back link ---------- */
+
+/* "← Robert Naanos": a quiet link back to the main site, above the
+   screen heading. The padding makes the tap target taller than the text. */
+.back {
+  display: inline-block;
+  padding: 10px 12px 10px 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
 }
 
-/* A quiet, small title: the screen heading below does the talking */
-.app-header h1 {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--muted);
+.back:hover,
+.back:active {
+  color: var(--text);
 }
 
 /* ---------- Screens ---------- */
 main {
   max-width: 520px;   /* keeps the layout phone-shaped on a laptop */
   margin: 0 auto;
-  padding: 32px 16px 16px;
+  /* env(...) keeps the top clear of the notch on newer phones */
+  padding: calc(14px + env(safe-area-inset-top)) 16px 16px;
 }
 
 .screen h2 {
+  margin-top: 8px;
   margin-bottom: 24px;
   font-size: 28px;
   font-weight: 600;
@@ -295,7 +295,8 @@ main {
 
 /* A clear ring when moving around with a keyboard */
 button:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
