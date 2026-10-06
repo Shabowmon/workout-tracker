@@ -7,13 +7,13 @@
 // Each line is one muscle group (a heading in the dropdown) followed by
 // the exercises listed under it.
 const EXERCISES = {
+  "Cardio": ["Running", "Biking"],
   "Chest": ["Bench Press", "Cable Flys", "Push-Ups"],
   "Back": ["Pull-Ups", "Barbell Row","Lat Pulldown", "Cable Row"],
   "Legs": ["Squat", "Romanian Deadlift", "Calf Raise"],
   "Shoulders": ["Overhead Press", "Lateral Raise", "Face Pull"],
   "Arms": ["Dumbbell Curl", "Hammer Curl", "Tricep Pushdown", "Overhead Tricep Extension"],
-  "Core": ["Plank", "Hanging Leg Raise", "Cable Crunch"],
-  "Cardio": ["Running", "Biking"]
+  "Core": ["Plank", "Hanging Leg Raise", "Cable Crunch"]
 };
 
 // Exercises in this group are logged as duration + distance instead of
