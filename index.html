@@ -29,23 +29,6 @@
           <label class="field-label" for="exercise-select">Exercise</label>
           <select id="exercise-select" class="text-input select-input"></select>
 
-          <!-- Swapped in for the dropdown when "Custom..." is chosen. -->
-          <div id="custom-exercise" class="custom-row" hidden>
-            <input
-              id="exercise-name"
-              class="text-input"
-              type="text"
-              placeholder="New exercise name"
-              autocomplete="off"
-              aria-label="New exercise name"
-            >
-            <button id="back-to-list" class="back-button" type="button" aria-label="Back to exercise list">List</button>
-          </div>
-
-          <!-- Shown by app.js only while the typed name matches one of
-               your saved "My Exercises" names. -->
-          <button id="remove-custom" class="remove-custom" type="button" hidden>Remove from My Exercises</button>
-
           <!-- Sets: one row per set, each with a reps and a weight input.
                Hidden by app.js while a Cardio exercise is chosen. -->
           <div id="strength-fields" class="sets">

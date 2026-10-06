@@ -7,9 +7,9 @@
 // Each line is one muscle group (a heading in the dropdown) followed by
 // the exercises listed under it.
 const EXERCISES = {
-  "Chest": ["Bench Press", "Incline Dumbbell Press", "Cable Flys", "Push-Ups"],
-  "Back": ["Pull-Ups", "Barbell Row", "Lat Pulldown", "Cable Row"],
-  "Legs": ["Squat", "Romanian Deadlift", "Leg Press", "Leg Curl", "Calf Raise"],
+  "Chest": ["Bench Press", "Cable Flys", "Push-Ups"],
+  "Back": ["Pull-Ups", "Barbell Row","Lat Pulldown", "Cable Row"],
+  "Legs": ["Squat", "Romanian Deadlift", "Calf Raise"],
   "Shoulders": ["Overhead Press", "Lateral Raise", "Face Pull"],
   "Arms": ["Dumbbell Curl", "Hammer Curl", "Tricep Pushdown", "Overhead Tricep Extension"],
   "Core": ["Plank", "Hanging Leg Raise", "Cable Crunch"],
@@ -52,10 +52,6 @@ tabs.forEach(function (tab) {
 // workouts in the shape described in DESIGN.md.
 const STORAGE_KEY = "workouts";
 
-// Your own exercise names (added with "Custom...") are stored under this
-// key, as a JSON array of names like ["Sled Push", "Dips"].
-const CUSTOM_KEY = "customExercises";
-
 // Read all saved workouts. Returns an empty array if nothing is saved yet.
 function loadWorkouts() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -65,17 +61,6 @@ function loadWorkouts() {
 // Write the full list of workouts back to localStorage.
 function storeWorkouts(workouts) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
-}
-
-// Read your saved custom exercise names. Empty array if there are none.
-function loadCustomExercises() {
-  const saved = localStorage.getItem(CUSTOM_KEY);
-  return saved ? JSON.parse(saved) : [];
-}
-
-// Write the full list of custom exercise names back to localStorage.
-function storeCustomExercises(names) {
-  localStorage.setItem(CUSTOM_KEY, JSON.stringify(names));
 }
 
 // Today's date as "YYYY-MM-DD", using the phone's own time zone.
@@ -92,15 +77,7 @@ function todayString() {
 
 const STARTING_SETS = 3;   // how many empty set rows the form starts with
 
-// The dropdown's last option has this value. It can't clash with a real
-// exercise name, so we can tell "Custom..." apart from the others.
-const CUSTOM_VALUE = "__custom__";
-
 const exerciseSelect = document.getElementById("exercise-select");
-const customRow = document.getElementById("custom-exercise");
-const customInput = document.getElementById("exercise-name");
-const backToListButton = document.getElementById("back-to-list");
-const removeCustomButton = document.getElementById("remove-custom");
 const strengthFields = document.getElementById("strength-fields");
 const setList = document.getElementById("set-list");
 const addSetButton = document.getElementById("add-set");
@@ -130,38 +107,15 @@ function addGroup(label, names) {
   exerciseSelect.appendChild(group);
 }
 
-// Build the dropdown: a "choose" prompt, your own exercises (if any),
-// the EXERCISES list from the top of this file, then "Custom...".
+// Build the dropdown: a "choose" prompt, then the EXERCISES list from
+// the top of this file.
 function renderExerciseSelect() {
   exerciseSelect.innerHTML = "";
   addOption(exerciseSelect, "", "Choose an exercise…");
 
-  const customNames = loadCustomExercises();
-  if (customNames.length > 0) {
-    addGroup("My Exercises", customNames);
-  }
-
   for (const muscleGroup in EXERCISES) {
     addGroup(muscleGroup, EXERCISES[muscleGroup]);
   }
-
-  addOption(exerciseSelect, CUSTOM_VALUE, "Custom...");
-}
-
-// Swap between the dropdown and the "type a new name" field.
-// show = true shows the text field; show = false goes back to the dropdown.
-function showCustomField(show) {
-  exerciseSelect.hidden = show;
-  customRow.hidden = !show;
-  customInput.value = "";
-  updateRemoveButton();   // the field is empty now, so this hides the button
-
-  if (show) {
-    customInput.focus();   // ready to type straight away
-  } else {
-    exerciseSelect.value = "";   // back to "Choose an exercise…"
-  }
-  updateFields();   // neither of those is cardio, so the set rows show
 }
 
 // True if the given name is one of the Cardio exercises.
@@ -178,74 +132,8 @@ function updateFields() {
   addSetButton.hidden = cardio;
 }
 
-// Look for a name we already know (built-in or custom), ignoring
-// upper/lower case. Returns the name as it's spelled in the list, or
-// undefined if it's brand new.
-function findKnownExercise(name) {
-  let known = loadCustomExercises();
-  for (const muscleGroup in EXERCISES) {
-    known = known.concat(EXERCISES[muscleGroup]);
-  }
-  return known.find(function (knownName) {
-    return knownName.toLowerCase() === name.toLowerCase();
-  });
-}
-
-// Choosing "Custom..." swaps in the text field. Any other choice just
-// needs the right inputs (sets or cardio) showing.
-exerciseSelect.addEventListener("change", function () {
-  if (exerciseSelect.value === CUSTOM_VALUE) {
-    showCustomField(true);
-  } else {
-    updateFields();
-  }
-});
-
-// The "List" button next to the text field goes back to the dropdown.
-backToListButton.addEventListener("click", function () {
-  showCustomField(false);
-});
-
-// ---------- Removing a custom exercise ----------
-
-// Look for what's typed in the text field among your saved "My Exercises"
-// names, ignoring upper/lower case. Returns the saved name, or undefined.
-// It only ever looks at the custom list, so the built-in EXERCISES can
-// never be matched (or removed) this way.
-function findTypedCustomExercise() {
-  const typed = customInput.value.trim().toLowerCase();
-  return loadCustomExercises().find(function (customName) {
-    return customName.toLowerCase() === typed;
-  });
-}
-
-// Show the "Remove from My Exercises" button only while the typed text
-// matches one of your saved custom names.
-function updateRemoveButton() {
-  removeCustomButton.hidden = findTypedCustomExercise() === undefined;
-}
-
-// Re-check on every keystroke in the text field.
-customInput.addEventListener("input", updateRemoveButton);
-
-// Tapping the button deletes that name from localStorage and rebuilds
-// the dropdown without it. Workouts already saved in History keep the name.
-removeCustomButton.addEventListener("click", function () {
-  const nameToRemove = findTypedCustomExercise();
-  if (nameToRemove === undefined) {
-    return;
-  }
-
-  // Keep every custom name except the one being removed.
-  const remaining = loadCustomExercises().filter(function (customName) {
-    return customName !== nameToRemove;
-  });
-  storeCustomExercises(remaining);
-
-  renderExerciseSelect();
-  updateRemoveButton();   // no longer a match, so the button hides
-  showMessage("Removed " + nameToRemove + " from My Exercises", false);
-});
+// Choosing an exercise shows the right inputs for it (sets or cardio).
+exerciseSelect.addEventListener("change", updateFields);
 
 // ---------- Set rows ----------
 
@@ -287,7 +175,8 @@ function renumberSets() {
 // Clear the form back to its starting state: no exercise chosen, a few
 // empty rows.
 function resetForm() {
-  showCustomField(false);
+  exerciseSelect.value = "";   // back to "Choose an exercise…"
+  updateFields();
   durationInput.value = "";
   distanceInput.value = "";
   setList.innerHTML = "";
@@ -360,39 +249,17 @@ function readCardio() {
 
 // Save the exercise on the form into today's workout.
 function saveWorkout() {
-  // The name comes from the text field if it's showing, otherwise from
-  // the dropdown.
-  const usingCustom = !customRow.hidden;
-  let name;
-  let isNewExercise = false;
-
-  if (usingCustom) {
-    name = customInput.value.trim();
-    if (name === "") {
-      showMessage("Enter an exercise name.", true);
-      return;
-    }
-    // If the typed name is already in the list, use the list's spelling
-    // instead of adding a duplicate.
-    const knownName = findKnownExercise(name);
-    if (knownName) {
-      name = knownName;
-    } else {
-      isNewExercise = true;
-    }
-  } else {
-    name = exerciseSelect.value;
-    if (name === "") {
-      showMessage("Choose an exercise.", true);
-      return;
-    }
+  const name = exerciseSelect.value;
+  if (name === "") {
+    showMessage("Choose an exercise.", true);
+    return;
   }
 
   // What gets stored for this exercise, and what the "Saved" message says.
   let entry;
   let savedText;
 
-  if (!usingCustom && isCardio(name)) {
+  if (isCardio(name)) {
     const cardio = readCardio();
     if (cardio === null) {
       showMessage("Duration and distance need to be numbers.", true);
@@ -435,19 +302,12 @@ function saveWorkout() {
   // browser), so only say "Saved" if it really worked.
   try {
     storeWorkouts(workouts);
-    // A brand-new name is remembered so it shows up under "My Exercises".
-    if (isNewExercise) {
-      const customNames = loadCustomExercises();
-      customNames.push(name);
-      storeCustomExercises(customNames);
-    }
   } catch (error) {
     showMessage("Couldn't save — browser storage is full or blocked.", true);
     return;
   }
 
   showMessage("Saved " + name + " — " + savedText, false);
-  renderExerciseSelect();
   resetForm();
   renderHistory();
 }

@@ -168,44 +168,6 @@ main {
   cursor: pointer;
 }
 
-/* The custom-name field and its "List" button sit side by side */
-.custom-row {
-  display: flex;
-  gap: 8px;
-}
-
-.custom-row .text-input {
-  flex: 1;        /* the text field takes all the leftover width */
-  min-width: 0;   /* ...and is allowed to shrink on narrow phones */
-}
-
-.back-button {
-  min-height: var(--touch);
-  padding: 0 16px;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font-weight: 500;
-  cursor: pointer;
-}
-
-/* "Remove from My Exercises": looks like a small red text link, but is
-   still a full-height, full-width tap target. */
-.remove-custom {
-  display: block;
-  width: 100%;
-  min-height: var(--touch);
-  margin-top: 4px;
-  background: none;
-  border: none;
-  border-radius: var(--radius);
-  color: var(--error);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
 .sets {
   margin: 28px 0 4px;
 }

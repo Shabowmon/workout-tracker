@@ -5,7 +5,7 @@ A simple web page for logging gym workouts, built to be opened on a phone
 at the gym. No accounts, no backend, no fuss.
 
 ## v1 does exactly two things
-1. **Log a workout** — pick an exercise (or type a new one), add sets of
+1. **Log a workout** — pick an exercise, add sets of
    reps × weight, hit save.
 2. **View history** — past workouts listed by date, newest first. Tap one
    to see every set.
@@ -26,9 +26,8 @@ don't build it yet.
 
 ## Screens
 1. **Log** (main screen): exercise picker — a dropdown grouped by muscle
-   group (edit the EXERCISES list in app.js to match your program), plus a
-   "Custom..." option for typing a new name. Custom names are remembered
-   under a "My Exercises" group. Rows of reps/weight inputs with a × to
+   group (edit the EXERCISES list in app.js to match your program). Rows
+   of reps/weight inputs with a × to
    remove a row, "+ add set", Save button. Exercises in the "Cardio"
    group swap the set rows for a single Duration (min) / Distance (mi) row.
 2. **History:** workouts grouped by date. Tap to expand a workout and see
