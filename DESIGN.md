@@ -29,7 +29,8 @@ don't build it yet.
    group (edit the EXERCISES list in app.js to match your program), plus a
    "Custom..." option for typing a new name. Custom names are remembered
    under a "My Exercises" group. Rows of reps/weight inputs with a × to
-   remove a row, "+ add set", Save button.
+   remove a row, "+ add set", Save button. Exercises in the "Cardio"
+   group swap the set rows for a single Duration (min) / Distance (mi) row.
 2. **History:** workouts grouped by date. Tap to expand a workout and see
    all its sets.
 
@@ -40,7 +41,8 @@ One workout is stored like this:
   "date": "2026-10-02",
   "exercises": [
     { "name": "Bench Press",
-      "sets": [ { "reps": 8, "weight": 135 }, { "reps": 8, "weight": 135 } ] }
+      "sets": [ { "reps": 8, "weight": 135 }, { "reps": 8, "weight": 135 } ] },
+    { "name": "Running", "duration": 30, "distance": 3.1 }
   ]
 }
 

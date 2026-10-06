@@ -224,6 +224,15 @@ main {
   text-align: center;
 }
 
+/* Cardio = the same look with fewer columns: duration | distance */
+.cardio-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 /* The set number: just a quiet number, no badge behind it */
 .set-number {
   width: 30px;

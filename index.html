@@ -46,8 +46,9 @@
                your saved "My Exercises" names. -->
           <button id="remove-custom" class="remove-custom" type="button" hidden>Remove from My Exercises</button>
 
-          <!-- Sets: one row per set, each with a reps and a weight input -->
-          <div class="sets">
+          <!-- Sets: one row per set, each with a reps and a weight input.
+               Hidden by app.js while a Cardio exercise is chosen. -->
+          <div id="strength-fields" class="sets">
             <div class="set-row set-header">
               <span>Set</span>
               <span>Reps</span>
@@ -62,6 +63,19 @@
 
           <!-- type="button" so it doesn't submit the form; app.js handles the tap. -->
           <button id="add-set" class="button button-secondary" type="button">+ Add set</button>
+
+          <!-- Cardio: swapped in for the sets above when a Cardio exercise
+               is chosen. Just one row: how long and how far. -->
+          <div id="cardio-fields" class="sets" hidden>
+            <div class="cardio-row set-header">
+              <span>Duration (min)</span>
+              <span>Distance (mi)</span>
+            </div>
+            <div class="cardio-row">
+              <input id="cardio-duration" class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Duration in minutes">
+              <input id="cardio-distance" class="number-input" type="text" inputmode="decimal" placeholder="0" aria-label="Distance in miles">
+            </div>
+          </div>
 
         </div>
 

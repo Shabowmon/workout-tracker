@@ -12,8 +12,13 @@ const EXERCISES = {
   "Legs": ["Squat", "Romanian Deadlift", "Leg Press", "Leg Curl", "Calf Raise"],
   "Shoulders": ["Overhead Press", "Lateral Raise", "Face Pull"],
   "Arms": ["Dumbbell Curl", "Hammer Curl", "Tricep Pushdown", "Overhead Tricep Extension"],
-  "Core": ["Plank", "Hanging Leg Raise", "Cable Crunch"]
+  "Core": ["Plank", "Hanging Leg Raise", "Cable Crunch"],
+  "Cardio": ["Running", "Biking"]
 };
+
+// Exercises in this group are logged as duration + distance instead of
+// sets of reps × weight.
+const CARDIO_GROUP = "Cardio";
 
 // ==================== Screen switching ====================
 
@@ -96,8 +101,12 @@ const customRow = document.getElementById("custom-exercise");
 const customInput = document.getElementById("exercise-name");
 const backToListButton = document.getElementById("back-to-list");
 const removeCustomButton = document.getElementById("remove-custom");
+const strengthFields = document.getElementById("strength-fields");
 const setList = document.getElementById("set-list");
 const addSetButton = document.getElementById("add-set");
+const cardioFields = document.getElementById("cardio-fields");
+const durationInput = document.getElementById("cardio-duration");
+const distanceInput = document.getElementById("cardio-distance");
 const saveButton = document.getElementById("save-workout");
 const saveMessage = document.getElementById("save-message");
 
@@ -152,6 +161,21 @@ function showCustomField(show) {
   } else {
     exerciseSelect.value = "";   // back to "Choose an exercise…"
   }
+  updateFields();   // neither of those is cardio, so the set rows show
+}
+
+// True if the given name is one of the Cardio exercises.
+function isCardio(name) {
+  return EXERCISES[CARDIO_GROUP].includes(name);
+}
+
+// Show the duration/distance row for a Cardio exercise, and the set rows
+// (with "+ Add set") for everything else.
+function updateFields() {
+  const cardio = isCardio(exerciseSelect.value);
+  cardioFields.hidden = !cardio;
+  strengthFields.hidden = cardio;
+  addSetButton.hidden = cardio;
 }
 
 // Look for a name we already know (built-in or custom), ignoring
@@ -167,10 +191,13 @@ function findKnownExercise(name) {
   });
 }
 
-// Choosing "Custom..." swaps in the text field.
+// Choosing "Custom..." swaps in the text field. Any other choice just
+// needs the right inputs (sets or cardio) showing.
 exerciseSelect.addEventListener("change", function () {
   if (exerciseSelect.value === CUSTOM_VALUE) {
     showCustomField(true);
+  } else {
+    updateFields();
   }
 });
 
@@ -261,6 +288,8 @@ function renumberSets() {
 // empty rows.
 function resetForm() {
   showCustomField(false);
+  durationInput.value = "";
+  distanceInput.value = "";
   setList.innerHTML = "";
   for (let i = 0; i < STARTING_SETS; i++) {
     addSetRow();
@@ -306,6 +335,29 @@ function readSets() {
   return sets;
 }
 
+// Read the cardio row into an object like { duration: 30, distance: 3.1 }
+// (minutes and miles). A blank distance counts as 0. Returns undefined if
+// the duration is blank, and null if something isn't a sensible number.
+function readCardio() {
+  // Some keyboards type a decimal comma ("3,1"), so turn it into a dot.
+  const durationText = durationInput.value.trim().replace(",", ".");
+  const distanceText = distanceInput.value.trim().replace(",", ".");
+
+  if (durationText === "") {
+    return undefined;
+  }
+
+  const duration = Number(durationText);
+  const distance = distanceText === "" ? 0 : Number(distanceText);
+
+  // Number("abc") gives NaN, which fails both of these checks.
+  if (!(duration > 0) || !(distance >= 0)) {
+    return null;
+  }
+
+  return { duration: duration, distance: distance };
+}
+
 // Save the exercise on the form into today's workout.
 function saveWorkout() {
   // The name comes from the text field if it's showing, otherwise from
@@ -336,14 +388,34 @@ function saveWorkout() {
     }
   }
 
-  const sets = readSets();
-  if (sets === null) {
-    showMessage("Reps and weight need to be numbers.", true);
-    return;
-  }
-  if (sets.length === 0) {
-    showMessage("Fill in at least one set.", true);
-    return;
+  // What gets stored for this exercise, and what the "Saved" message says.
+  let entry;
+  let savedText;
+
+  if (!usingCustom && isCardio(name)) {
+    const cardio = readCardio();
+    if (cardio === null) {
+      showMessage("Duration and distance need to be numbers.", true);
+      return;
+    }
+    if (cardio === undefined) {
+      showMessage("Fill in the duration.", true);
+      return;
+    }
+    entry = { name: name, duration: cardio.duration, distance: cardio.distance };
+    savedText = formatCardio(entry).join(", ");
+  } else {
+    const sets = readSets();
+    if (sets === null) {
+      showMessage("Reps and weight need to be numbers.", true);
+      return;
+    }
+    if (sets.length === 0) {
+      showMessage("Fill in at least one set.", true);
+      return;
+    }
+    entry = { name: name, sets: sets };
+    savedText = sets.length + (sets.length === 1 ? " set" : " sets");
   }
 
   // One workout per date: if today already has a workout, add this
@@ -357,7 +429,7 @@ function saveWorkout() {
     workout = { date: today, exercises: [] };
     workouts.push(workout);
   }
-  workout.exercises.push({ name: name, sets: sets });
+  workout.exercises.push(entry);
 
   // localStorage can refuse to save (storage full, or blocked by the
   // browser), so only say "Saved" if it really worked.
@@ -374,7 +446,7 @@ function saveWorkout() {
     return;
   }
 
-  showMessage("Saved " + name + " — " + sets.length + (sets.length === 1 ? " set" : " sets"), false);
+  showMessage("Saved " + name + " — " + savedText, false);
   renderExerciseSelect();
   resetForm();
   renderHistory();
@@ -412,6 +484,16 @@ function formatSet(set) {
   return set.reps + " × " + set.weight + " lb";
 }
 
+// Turn a cardio exercise into pieces of text like ["30 min", "3.1 mi"].
+// A distance of 0 (left blank) is left out.
+function formatCardio(exercise) {
+  const parts = [exercise.duration + " min"];
+  if (exercise.distance > 0) {
+    parts.push(exercise.distance + " mi");
+  }
+  return parts;
+}
+
 // Small helper: create an element with a class and some text.
 // Using textContent (not innerHTML) means an exercise name is always
 // shown as plain text, even if it contains characters like < or &.
@@ -434,7 +516,8 @@ function makeWorkoutCard(workout) {
   summary.appendChild(makeElement("span", "workout-summary", count + (count === 1 ? " exercise" : " exercises")));
   card.appendChild(summary);
 
-  // The part that shows when expanded: each exercise and its sets.
+  // The part that shows when expanded: each exercise and its sets
+  // (or, for cardio, its duration and distance).
   const body = document.createElement("div");
   body.className = "workout-body";
   workout.exercises.forEach(function (exercise) {
@@ -442,8 +525,10 @@ function makeWorkoutCard(workout) {
 
     const list = document.createElement("ol");
     list.className = "set-list";
-    exercise.sets.forEach(function (set) {
-      list.appendChild(makeElement("li", "", formatSet(set)));
+    // Cardio exercises are stored without a "sets" list.
+    const pills = exercise.sets ? exercise.sets.map(formatSet) : formatCardio(exercise);
+    pills.forEach(function (text) {
+      list.appendChild(makeElement("li", "", text));
     });
     body.appendChild(list);
   });
