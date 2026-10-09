@@ -1,0 +1,13 @@
+name = "workout-tracker"   # MUST match the existing Worker name in the dashboard
+main = "worker.js"
+compatibility_date = "2026-10-08"
+
+# Only this folder is served as the website.
+[assets]
+directory = "./public"
+binding = "ASSETS"   # lets worker.js hand non-API requests to the static site
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lifts"
+database_id = "<paste from `npx wrangler d1 create lifts` output>"

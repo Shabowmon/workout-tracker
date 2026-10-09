@@ -21,8 +21,20 @@ don't build it yet.
   login. Works on bad gym wifi, and your data never leaves your phone.
   Known limit: history is tied to one browser. A real backend comes later
   if you ever want sync.
-- **Deploy:** Cloudflare Pages, same pipeline as robertnaanos.com. Future
-  option: its own subdomain (lifts.robertnaanos.com).
+- **Deploy:** a Cloudflare Worker with static assets, at
+  lifts.robertnaanos.com. `npx wrangler deploy` publishes it.
+
+## Backend (added after v1)
+- **Cloudflare Worker + D1.** `worker.js` answers the `/api/*` routes and
+  stores history in a D1 database bound as `DB` (see `wrangler.toml`).
+  Every request needs an `x-api-key` header matching the `API_KEY` Worker
+  secret. The key is typed into the app once per phone; it is never
+  written in the code.
+- **localStorage is still written on every save.** It is the offline
+  fallback for the History screen. Rows that haven't reached the server
+  wait in an outbox and are retried the next time the app opens.
+- **localStorage keys:** `workouts` (below), `outbox`, `apiKey`, and
+  `migration` (the one-time "Upload my existing history" button).
 
 ## Screens
 1. **Log** (main screen): exercise picker — a dropdown grouped by muscle
@@ -39,17 +51,20 @@ One workout is stored like this:
 {
   "date": "2026-10-02",
   "exercises": [
-    { "name": "Bench Press",
-      "sets": [ { "reps": 8, "weight": 135 }, { "reps": 8, "weight": 135 } ] },
-    { "name": "Running", "duration": 30, "distance": 3.1 }
+    { "name": "Bench Press", "createdAt": "2026-10-02T17:04:11.000Z",
+      "sets": [ { "id": "…", "reps": 8, "weight": 135 }, { "id": "…", "reps": 8, "weight": 135 } ] },
+    { "id": "…", "name": "Running", "createdAt": "2026-10-02T17:30:42.000Z",
+      "duration": 30, "distance": 3.1 }
   ]
 }
 
 Files
 
-    index.html — page structure
-    styles.css — looks (mobile-first, big touch targets for gym fingers)
-    app.js — logic (render screens, save/load workouts)
+    public/index.html — page structure
+    public/styles.css — looks (mobile-first, big touch targets for gym fingers)
+    public/app.js — logic (render screens, save/load workouts, sync)
+    worker.js — the API (only the public folder is served as the site)
+    wrangler.toml — Worker settings
     DESIGN.md — this file
 
 Build order

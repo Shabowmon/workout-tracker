@@ -1,5 +1,6 @@
-// Workout Tracker — logging saves to localStorage, and the History
-// screen reads it back.
+// Workout Tracker — logging saves to localStorage and to the server
+// (/api, see worker.js). The History screen reads the server's
+// copy, and falls back to localStorage when the server can't be reached.
 
 // ==================== EXERCISES ====================
 
@@ -191,7 +192,7 @@ function showMessage(text, isError) {
   saveMessage.classList.toggle("error", isError);
 }
 
-// Read the set rows into an array like [{ reps: 8, weight: 135 }, ...].
+// Read the set rows into an array like [{ id: "…", reps: 8, weight: 135 }, ...].
 // Rows with reps left blank are skipped. A blank weight counts as 0
 // (bodyweight exercises). Returns null if a row has something that
 // isn't a sensible number.
@@ -218,7 +219,8 @@ function readSets() {
       return null;
     }
 
-    sets.push({ reps: reps, weight: weight });
+    // The id lets the server spot a set it has already been sent.
+    sets.push({ id: crypto.randomUUID(), reps: reps, weight: weight });
   }
 
   return sets;
@@ -269,7 +271,7 @@ function saveWorkout() {
       showMessage("Fill in the duration.", true);
       return;
     }
-    entry = { name: name, duration: cardio.duration, distance: cardio.distance };
+    entry = { id: crypto.randomUUID(), name: name, duration: cardio.duration, distance: cardio.distance };
     savedText = formatCardio(entry).join(", ");
   } else {
     const sets = readSets();
@@ -284,6 +286,10 @@ function saveWorkout() {
     entry = { name: name, sets: sets };
     savedText = sets.length + (sets.length === 1 ? " set" : " sets");
   }
+
+  // Every row from this one tap shares this timestamp, so the server's
+  // history can group them back into one exercise.
+  entry.createdAt = new Date().toISOString();
 
   // One workout per date: if today already has a workout, add this
   // exercise to it. Otherwise start a new workout for today.
@@ -302,6 +308,7 @@ function saveWorkout() {
   // browser), so only say "Saved" if it really worked.
   try {
     storeWorkouts(workouts);
+    queueRows(rowsForEntry(today, entry));   // waiting to go to the server
   } catch (error) {
     showMessage("Couldn't save — browser storage is full or blocked.", true);
     return;
@@ -310,6 +317,7 @@ function saveWorkout() {
   showMessage("Saved " + name + " — " + savedText, false);
   resetForm();
   renderHistory();
+  sync();   // send it to the server in the background
 }
 
 addSetButton.addEventListener("click", addSetRow);
@@ -397,9 +405,13 @@ function makeWorkoutCard(workout) {
   return card;
 }
 
-// Rebuild the History screen from what's saved in localStorage.
+// Rebuild the History screen. It shows the server's copy once that has
+// arrived, and what's saved in localStorage until then (or when offline).
 function renderHistory() {
-  const workouts = loadWorkouts();
+  // While the "Upload my existing history" button is showing, the server
+  // has nothing yet, so keep showing this phone's own copy.
+  const useServer = serverHistory !== null && uploadButton.hidden;
+  const workouts = useServer ? serverWorkouts() : loadWorkouts();
 
   // Newest first. Dates are "YYYY-MM-DD", so comparing them as text
   // puts them in date order.
@@ -416,8 +428,395 @@ function renderHistory() {
   historyEmpty.hidden = workouts.length > 0;
 }
 
+// ==================== Server sync ====================
+
+// Besides "workouts", these localStorage keys are used:
+const API_KEY_STORAGE = "apiKey";   // the key you typed in, sent with every request
+const OUTBOX_KEY = "outbox";        // rows still waiting to reach the server
+const MIGRATION_KEY = "migration";  // "offered" or "done" (the one-time upload)
+
+const syncText = document.getElementById("sync-text");
+const setKeyButton = document.getElementById("set-key");
+const uploadButton = document.getElementById("upload-history");
+
+// The server's answer to /api/history: { strength: [...], cardio: [...] }.
+// Stays null until the server has answered once since the page opened.
+let serverHistory = null;
+
+let syncing = false;   // true while sync() is running, so it never runs twice at once
+
+// ---------- API helper ----------
+
+// Send one request to the server and return its JSON answer. Throws an
+// error if the server can't be reached or says no; error.status then holds
+// the HTTP status (401 = wrong key), or is undefined if there was no answer.
+async function apiRequest(method, path, body) {
+  const options = {
+    method: method,
+    headers: { "x-api-key": localStorage.getItem(API_KEY_STORAGE) || "" }
+  };
+  if (body !== undefined) {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(body);
+  }
+
+  const response = await fetch(path, options);
+  if (!response.ok) {
+    const error = new Error("Server answered " + response.status);
+    error.status = response.status;
+    throw error;
+  }
+  return response.json();
+}
+
+function apiSaveStrength(entry) {
+  return apiRequest("POST", "/api/log/strength", entry);
+}
+
+function apiSaveCardio(entry) {
+  return apiRequest("POST", "/api/log/cardio", entry);
+}
+
+// from and to are "YYYY-MM-DD"; leave them out to get everything.
+function apiHistory(from, to) {
+  const params = new URLSearchParams();
+  if (from) {
+    params.set("from", from);
+  }
+  if (to) {
+    params.set("to", to);
+  }
+  const query = params.toString();
+  return apiRequest("GET", "/api/history" + (query ? "?" + query : ""));
+}
+
+// These two aren't used yet: the app has no custom-exercise screen right now.
+function apiGetExercises() {
+  return apiRequest("GET", "/api/exercises");
+}
+
+function apiAddExercise(name) {
+  return apiRequest("POST", "/api/exercises", { name: name });
+}
+
+// ---------- Turning saved entries into server rows, and back ----------
+
+// The server stores cardio names like "running" and "jump_rope".
+function serverCardioName(name) {
+  return name.toLowerCase().replace(/ /g, "_");
+}
+
+// ...and this turns one back into the name used in the dropdown.
+function displayCardioName(serverName) {
+  const known = EXERCISES[CARDIO_GROUP].find(function (name) {
+    return serverCardioName(name) === serverName;
+  });
+  return known || serverName;
+}
+
+// Turn one saved exercise (see DESIGN.md) into the rows the server stores:
+// one row per set for strength, a single row for cardio. Each is wrapped
+// as { kind, body }, where kind says which API route the body goes to.
+function rowsForEntry(date, entry) {
+  if (!entry.sets) {
+    return [{
+      kind: "cardio",
+      body: {
+        id: entry.id,
+        date: date,
+        exercise: serverCardioName(entry.name),
+        duration_min: entry.duration,
+        // A blank distance is saved as 0 here; the server wants "none".
+        distance_mi: entry.distance > 0 ? entry.distance : null,
+        jumps: null,
+        created_at: entry.createdAt
+      }
+    }];
+  }
+
+  return entry.sets.map(function (set) {
+    return {
+      kind: "strength",
+      body: {
+        id: set.id,
+        date: date,
+        exercise: entry.name,
+        sets: 1,
+        reps: set.reps,
+        weight: set.weight,
+        created_at: entry.createdAt
+      }
+    };
+  });
+}
+
+// Build the list of workouts for the History screen out of the server's
+// rows, plus any rows still waiting in the outbox (so something you just
+// logged shows up straight away). Same shape as loadWorkouts() returns.
+function serverWorkouts() {
+  const rows = { strength: serverHistory.strength.slice(), cardio: serverHistory.cardio.slice() };
+  const seen = {};   // ids already in the list, so no row is counted twice
+  rows.strength.concat(rows.cardio).forEach(function (row) {
+    seen[row.id] = true;
+  });
+  loadOutbox().forEach(function (item) {
+    if (!seen[item.body.id]) {
+      seen[item.body.id] = true;
+      rows[item.kind].push(item.body);
+    }
+  });
+
+  // First rebuild the exercises. Strength rows that share a date, name and
+  // created_at came from one tap of "Save workout", so they are one exercise.
+  const entries = [];
+  const strengthEntries = {};
+  rows.strength.forEach(function (row) {
+    const key = row.date + "|" + row.exercise + "|" + row.created_at;
+    let entry = strengthEntries[key];
+    if (!entry) {
+      entry = { date: row.date, createdAt: row.created_at, name: row.exercise, sets: [] };
+      strengthEntries[key] = entry;
+      entries.push(entry);
+    }
+    // A row can stand for several identical sets.
+    for (let i = 0; i < row.sets; i++) {
+      entry.sets.push({ reps: row.reps, weight: row.weight });
+    }
+  });
+  rows.cardio.forEach(function (row) {
+    entries.push({
+      date: row.date,
+      createdAt: row.created_at,
+      name: displayCardioName(row.exercise),
+      duration: row.duration_min,
+      distance: row.distance_mi || 0
+    });
+  });
+
+  // Then put them in the order they were logged, and group them by date.
+  entries.sort(function (a, b) {
+    return a.createdAt.localeCompare(b.createdAt);
+  });
+  const workouts = [];
+  const workoutsByDate = {};
+  entries.forEach(function (entry) {
+    let workout = workoutsByDate[entry.date];
+    if (!workout) {
+      workout = { date: entry.date, exercises: [] };
+      workoutsByDate[entry.date] = workout;
+      workouts.push(workout);
+    }
+    workout.exercises.push(entry);
+  });
+  return workouts;
+}
+
+// ---------- Outbox ----------
+
+// Rows waiting to be sent, oldest first. Empty array if there are none.
+function loadOutbox() {
+  const saved = localStorage.getItem(OUTBOX_KEY);
+  return saved ? JSON.parse(saved) : [];
+}
+
+function storeOutbox(items) {
+  localStorage.setItem(OUTBOX_KEY, JSON.stringify(items));
+}
+
+// Add rows to the end of the outbox, skipping any that are already in it.
+function queueRows(rows) {
+  const outbox = loadOutbox();
+  const queued = {};
+  outbox.forEach(function (item) {
+    queued[item.body.id] = true;
+  });
+  rows.forEach(function (row) {
+    if (!queued[row.body.id]) {
+      queued[row.body.id] = true;
+      outbox.push(row);
+    }
+  });
+  storeOutbox(outbox);
+}
+
+// Take one row out of the outbox once the server has it.
+function removeFromOutbox(id) {
+  storeOutbox(loadOutbox().filter(function (item) {
+    return item.body.id !== id;
+  }));
+}
+
+// ---------- Syncing ----------
+
+// Add a row the server has just accepted to our copy of its history, so
+// it doesn't vanish from the screen when it leaves the outbox. Skipped if
+// the server already had it (the one-time upload can resend a row).
+function rememberSentRow(item) {
+  const rows = serverHistory[item.kind];
+  const alreadyThere = rows.some(function (row) {
+    return row.id === item.body.id;
+  });
+  if (!alreadyThere) {
+    rows.push(item.body);
+  }
+}
+
+// Set the small status line. needsKey also shows the "Enter API key" button.
+function showSyncStatus(text, needsKey) {
+  syncText.textContent = text;
+  setKeyButton.hidden = !needsKey;
+}
+
+// Talk to the server: fetch the history (once per page open), then send
+// everything in the outbox, oldest first. Called when the app opens and
+// after every save. If anything fails, the outbox keeps what's left and
+// the next call tries again.
+async function sync() {
+  if (syncing) {
+    return;   // the run in progress will pick up anything just added
+  }
+  if (!localStorage.getItem(API_KEY_STORAGE)) {
+    showSyncStatus("Not connected to the server.", true);
+    return;
+  }
+
+  syncing = true;
+  showSyncStatus("Syncing…", false);
+  try {
+    // History comes first: the check for old history to upload needs to
+    // see the server before this phone adds anything to it.
+    if (serverHistory === null) {
+      serverHistory = await apiHistory();
+      updateMigrationOffer();
+      renderHistory();
+    }
+
+    while (true) {
+      const next = loadOutbox()[0];
+      if (!next) {
+        break;
+      }
+      try {
+        if (next.kind === "cardio") {
+          await apiSaveCardio(next.body);
+        } else {
+          await apiSaveStrength(next.body);
+        }
+        rememberSentRow(next);
+      } catch (error) {
+        // 400 means the server will never accept this row, so retrying is
+        // pointless. Anything else: stop here and try again next time.
+        if (error.status !== 400) {
+          throw error;
+        }
+        console.warn("Server rejected a row; dropping it from the outbox", next);
+      }
+      removeFromOutbox(next.body.id);
+    }
+
+    showSyncStatus("Synced", false);
+  } catch (error) {
+    if (error.status === 401) {
+      showSyncStatus("The server didn't accept the API key.", true);
+    } else {
+      const waiting = loadOutbox().length;
+      showSyncStatus(waiting > 0 ? "Offline — " + waiting + " waiting to sync" : "Offline", false);
+    }
+  } finally {
+    syncing = false;
+  }
+  renderHistory();
+}
+
+// The key is typed in once per phone and kept in localStorage. It is never
+// written in this file.
+setKeyButton.addEventListener("click", function () {
+  const key = window.prompt("API key");
+  if (key && key.trim() !== "") {
+    localStorage.setItem(API_KEY_STORAGE, key.trim());
+    sync();
+  }
+});
+
+// ---------- One-time upload of old history ----------
+
+// Workouts saved before the server existed have no ids or timestamps.
+// Give them some, so they can be uploaded (and never uploaded twice).
+// Changes the workouts in place.
+function addMissingIds(workouts) {
+  workouts.forEach(function (workout) {
+    const parts = workout.date.split("-");
+    workout.exercises.forEach(function (entry, index) {
+      if (!entry.createdAt) {
+        // The real time wasn't recorded. Use noon on the day, plus a second
+        // per exercise so they stay separate and in order.
+        entry.createdAt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, index).toISOString();
+      }
+      if (entry.sets) {
+        entry.sets.forEach(function (set) {
+          if (!set.id) {
+            set.id = crypto.randomUUID();
+          }
+        });
+      } else if (!entry.id) {
+        entry.id = crypto.randomUUID();
+      }
+    });
+  });
+}
+
+// True if this phone holds workouts saved before the server existed.
+function hasOldHistory() {
+  return loadWorkouts().some(function (workout) {
+    return workout.exercises.some(function (entry) {
+      return !entry.createdAt;
+    });
+  });
+}
+
+// Decide whether to show "Upload my existing history": only if this phone
+// has old history and the server has none at all. Once offered, it stays
+// offered until it's been used.
+function updateMigrationOffer() {
+  let state = localStorage.getItem(MIGRATION_KEY);
+  const serverIsEmpty = serverHistory.strength.length === 0 && serverHistory.cardio.length === 0;
+  if (state === null && serverIsEmpty && hasOldHistory()) {
+    state = "offered";
+    localStorage.setItem(MIGRATION_KEY, state);
+  }
+  uploadButton.hidden = state !== "offered";
+}
+
+// Put every saved workout in the outbox and let sync() send them. Rows
+// are matched by id, so nothing is sent or stored twice.
+uploadButton.addEventListener("click", function () {
+  const workouts = loadWorkouts();
+  addMissingIds(workouts);
+
+  let rows = [];
+  workouts.forEach(function (workout) {
+    workout.exercises.forEach(function (entry) {
+      rows = rows.concat(rowsForEntry(workout.date, entry));
+    });
+  });
+
+  try {
+    storeWorkouts(workouts);   // keep the new ids
+    queueRows(rows);
+    localStorage.setItem(MIGRATION_KEY, "done");
+  } catch (error) {
+    showSyncStatus("Couldn't start the upload — browser storage is full or blocked.", false);
+    return;
+  }
+
+  uploadButton.hidden = true;
+  renderHistory();
+  sync();
+});
+
 // ==================== Start-up ====================
 
 renderExerciseSelect();
 resetForm();
 renderHistory();
+sync();

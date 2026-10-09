@@ -373,6 +373,30 @@ a:focus-visible {
   color: var(--muted);
 }
 
+/* "Upload my existing history": same outline button as "+ Add set" */
+.upload-history {
+  margin: 0 0 16px;
+}
+
+/* ---------- Sync status ---------- */
+
+/* One small, quiet line under each screen */
+.sync-status {
+  margin: 24px 0 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* "Enter API key": looks like a text link */
+.link-button {
+  padding: 10px 6px;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+
 /* ---------- Bottom tab bar ---------- */
 .tab-bar {
   position: fixed;

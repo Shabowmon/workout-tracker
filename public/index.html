@@ -75,6 +75,10 @@
     <section id="screen-history" class="screen" hidden>
       <h2>History</h2>
 
+      <!-- Shown by app.js only if this phone holds history from before the
+           server existed, and the server has none yet. -->
+      <button id="upload-history" class="button button-secondary upload-history" type="button" hidden>Upload my existing history</button>
+
       <!-- Shown by app.js only when nothing has been saved yet. -->
       <p id="history-empty" class="empty-message" hidden>
         No workouts yet. Log your first one and it will show up here.
@@ -85,6 +89,13 @@
            without any extra JS. -->
       <div id="history-list"></div>
     </section>
+
+    <!-- One quiet line about syncing with the server (see "Server sync" in
+         app.js). The button only shows when a key is needed. -->
+    <p class="sync-status">
+      <span id="sync-text" role="status"></span>
+      <button id="set-key" class="link-button" type="button" hidden>Enter API key</button>
+    </p>
 
   </main>
 
