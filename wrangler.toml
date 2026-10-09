@@ -10,4 +10,4 @@ binding = "ASSETS"   # lets worker.js hand non-API requests to the static site
 [[d1_databases]]
 binding = "DB"
 database_name = "lifts"
-database_id = "<paste from `npx wrangler d1 create lifts` output>"
+database_id = "a6d529ec-7f86-44cf-8377-9f27b511044f"
